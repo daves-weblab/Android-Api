@@ -1,6 +1,4 @@
-package at.ac.uibk.thread;
-
-import android.util.Log;
+package at.codecomb.util.thread;
 
 /*
  * Copyright (c) 2013, All Rights Reserved, file = PausableThread.java
@@ -26,16 +24,17 @@ import android.util.Log;
  */
 
 /**
- * Since creating a Thread costs a lot of resources and the DalvikVM's Garbage Collector Calls
- * are even more expansive, this Thread can be used instead of using simple threads.
- * This thread can be paused and resumed when needed again, the method which does the work can be overriden
- * when creating a PausableThread since it's being abstract.
+ * Since creating a Thread costs a lot of resources and the DalvikVM's Garbage Collector Calls are
+ * even more expansive, this Thread can be used instead of using simple threads. This thread can be
+ * paused and resumed when needed again, the method which does the work can be overriden when
+ * creating a PausableThread since it's being abstract.
+ * 
  * @author David Riedl (Code Comb)
- *
+ * @version 2.1
  */
 abstract public class PausableThread extends Thread {
 	/* Lock for Thread-Safety */
-	private Object mPauseLock;
+	private final Object mPauseLock = new Object();
 	/* true --> the thread autopauses itself after each call of work() */
 	private boolean mAutoPause;
 	/* true --> the thread is actually paused */
@@ -44,11 +43,18 @@ abstract public class PausableThread extends Thread {
 	private boolean mFinished;
 	/* true --> actually did one step and can be resumed (safety) */
 	private boolean mStarted;
+	private int mCycleAmount;
+	private final Object mCycleAmountLock = new Object();
 
 	public PausableThread() {
-		mPauseLock = new Object();
 		mPaused = false;
 		mFinished = false;
+		setCycleAmount(0);
+	}
+
+	public PausableThread(final boolean autoPause) {
+		this();
+		setAutoPause(autoPause);
 	}
 
 	@Override
@@ -58,16 +64,16 @@ abstract public class PausableThread extends Thread {
 			/* get the lock */
 			synchronized (mPauseLock) {
 				/* if being paused */
-				while (mPaused) {
+				while (mPaused && getCycleAmount() == 0) {
 					try {
 						/* if it is the first cycle set mStarted to true */
-						if(!mStarted) {
+						if (!mStarted) {
 							mStarted = true;
 						}
 						/* wait till resumeThread() or done() are being called */
 						mPauseLock.wait();
 					} catch (InterruptedException e) {
-						Log.i("DEBUG", PausableThread.class.toString() + " InterruptedException occured!");
+						e.printStackTrace();
 					}
 				}
 			}
@@ -76,6 +82,9 @@ abstract public class PausableThread extends Thread {
 			if (!mFinished) {
 				work();
 			}
+
+			decrementCycleAmount();
+
 			/* if autopause is activated, the thread pauses itself */
 			if (mAutoPause) {
 				mPaused = true;
@@ -84,33 +93,56 @@ abstract public class PausableThread extends Thread {
 	}
 
 	/**
-	 * pauses the thread, and prevents work() from being called 
+	 * pauses the thread, and prevents work() from being called
 	 */
 	public void pauseThread() {
-//		/* get the lock and set paused to true */
+		// /* get the lock and set paused to true */
 		synchronized (mPauseLock) {
 			mPaused = true;
 		}
 	}
 
-	 /**
-	  * resume the thread again
-	  */
+	private void incrementCycleAmount() {
+		synchronized (mCycleAmountLock) {
+			mCycleAmount++;
+		}
+	}
+
+	private void decrementCycleAmount() {
+		synchronized (mCycleAmountLock) {
+			mCycleAmount--;
+		}
+	}
+
+	private void setCycleAmount(final int amount) {
+		synchronized (mCycleAmountLock) {
+			mCycleAmount = amount;
+		}
+	}
+
+	private int getCycleAmount() {
+		synchronized (mCycleAmountLock) {
+			return mCycleAmount;
+		}
+	}
+
+	/**
+	 * resume the thread again
+	 */
 	public void resumeThread() {
-		/* get the lock  and set paused to false */
+		incrementCycleAmount();
+
+		/* get the lock and set paused to false */
 		synchronized (mPauseLock) {
 			mPaused = false;
-		}
-		
-		/* if the thread hasn't started yet (safety matter) */
-		if (mStarted) {
-			/* actually wait till the thread is really waiting or the notify is lost */
-			while (this.getState() != Thread.State.WAITING)
-				;
 
-			/* get the lock again and notify the waiting thread */
-			synchronized (mPauseLock) {
-				mPauseLock.notifyAll();
+			/* if the thread hasn't started yet (safety matter) */
+			if (mStarted) {
+				/* actually wait till the thread is really waiting or the notify is lost */
+				if (this.getState() == Thread.State.WAITING) {
+					/* get the lock again and notify the waiting thread */
+					mPauseLock.notifyAll();
+				}
 			}
 		}
 	}
@@ -119,20 +151,22 @@ abstract public class PausableThread extends Thread {
 	 * tells the thread that he can stop calling work() and run out
 	 */
 	public void done() {
-		/* wait till the thread is waiting or the notify is lost */
-		while(this.getState() != Thread.State.WAITING)
-			;
-		
 		/* get the lock set finished to true and notify the thread */
 		synchronized (mPauseLock) {
 			mFinished = true;
-			mPauseLock.notifyAll();
+			/* wait till the thread is waiting or the notify is lost */
+			if (this.getState() == Thread.State.WAITING) {
+				mPauseLock.notifyAll();
+			}
 		}
 	}
 
 	/**
-	 * activates or deactivates autopause, which makes the thread pause itself after each call of work()
-	 * @param autoPause true = activated, false = deactivated
+	 * activates or deactivates autopause, which makes the thread pause itself after each call of
+	 * work()
+	 * 
+	 * @param autoPause
+	 *            true = activated, false = deactivated
 	 */
 	public void setAutoPause(boolean autoPause) {
 		mAutoPause = autoPause;
