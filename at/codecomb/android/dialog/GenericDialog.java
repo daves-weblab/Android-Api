@@ -1,4 +1,4 @@
-package at.codecomb.dialog;
+package at.ac.uibk.dialog;
 
 import android.app.Activity;
 import android.app.AlertDialog.Builder;
@@ -10,36 +10,14 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 
-/*
- * Copyright (c) 2013, All Rights Reserved, file = GenericDialog.java
- * 
- * This source is subject to Code Comb. 
- * Permission is hereby granted, free of charge, to any person obtaining a 
- * copy of this software and associated documentation files (the "Software"), 
- * to deal in the Software without restriction, including without limitation 
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the Software 
- * is furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
- * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
- * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
- * OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
 /**
- * When creating dialogs with a DialogBuilder most of the time the same source code is used and not many things differ. That is the goal of
- * GenericDialog, creating dialogs fast and easy. On the other hand GenericDialogs do have one more point to them which make them more advanced
- * compared to standart DialogFragments, they are listenable by implementing DialogListener.
+ * When creating dialogs with a DialogBuilder most of the time the same source code is used and not many things differ.
+ * That is the goal of GenericDialog, creating dialogs fast and easy. On the other hand GenericDialogs do have one more
+ * point to them which make them more advanced compared to standart DialogFragments, they are listenable by implementing
+ * DialogListener.
  * 
- * @author David Riedl (Code Comb)
- * @version 1.3
+ * @author David Riedl (Code-Comb)
+ * @version 1.2
  */
 public abstract class GenericDialog extends DialogFragment {
 	/* the object listening to the dialog */
@@ -125,31 +103,60 @@ public abstract class GenericDialog extends DialogFragment {
 		return mView;
 	}
 
-	public void setListenable(boolean listenable) {
+	/**
+	 * If the dialog is "listenable" the dialog will have two buttons, a negative and positive one. If set to true the
+	 * activity calling the dialog needs to implement the interface DialogListener. Once one of the buttons is clicked
+	 * it will be delegated to the listening Activity calling onPositive or onNegativeButtonClick
+	 * 
+	 * @param listenable
+	 *            listenable if true, not-listenable otherwise
+	 */
+	public void setListenable(final boolean listenable) {
 		mListenable = listenable;
 	}
 
-	public void setDialogTag(String tag) {
+	/**
+	 * gives the dialog a tag, which can be used to identify it in onButtonClicked()
+	 * 
+	 * @param tag
+	 *            the tag to identify the dialog
+	 */
+	public void setDialogTag(final String tag) {
 		mTAG = tag;
 	}
 
+	/**
+	 * the tag to identify the dialog, previously set with setDialogTag()
+	 */
 	public String getDialogTag() {
 		return mTAG;
 	}
 
-	public void setDialogTitle(String title) {
+	/**
+	 * the title of the dialog, shown on the top of the dialog
+	 * 
+	 * @param title
+	 *            title of the dialog
+	 */
+	public void setDialogTitle(final String title) {
 		mTitle = title;
 	}
 
-	public void setPositiveButtonText(String text) {
+	public void setPositiveButtonText(final String text) {
 		mPositiveButtonText = text;
 	}
 
-	public void setNegativeButtonText(String text) {
+	public void setNegativeButtonText(final String text) {
 		mNegativeButtonText = text;
 	}
 
-	public void setObject(Object object) {
+	/**
+	 * simple object to transfere data from dialoglogic to activity logic
+	 * 
+	 * @param object
+	 *            the object to be set
+	 */
+	public void setObject(final Object object) {
 		mObject = object;
 	}
 
@@ -158,7 +165,7 @@ public abstract class GenericDialog extends DialogFragment {
 	}
 
 	@Override
-	public void onAttach(Activity activity) {
+	public void onAttach(final Activity activity) {
 		super.onAttach(activity);
 		/* if an object is listening check if it implements the needed interface */
 		if (mListenable) {
@@ -171,12 +178,12 @@ public abstract class GenericDialog extends DialogFragment {
 	}
 
 	/**
-	 * This method implements how the dialog's View is being generated and returns it. A layout from resources can be inflated by using the inflater
-	 * given by the parameters.
+	 * This method implements how the dialog's View is being generated and returns it. A layout from resources can be
+	 * inflated by using the inflater given by the parameters.
 	 * 
 	 * @param inflater
 	 *            used to inflate the layout for the dialog's view
 	 * @return the created View
 	 */
-	abstract public View generateView(LayoutInflater inflater);
+	abstract public View generateView(final LayoutInflater inflater);
 }
