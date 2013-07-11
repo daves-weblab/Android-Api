@@ -3,12 +3,11 @@ package at.codecomb.android.application.core;
 import java.util.ArrayList;
 import java.util.List;
 
-import android.os.Message;
 import at.codecomb.android.application.listener.ApplicationListener;
 import at.codecomb.util.thread.PausableThread;
 
 /*
- * Copyright (c) 2013, All Rights Reserved, file = Database.java
+ * Copyright (c) 2013, All Rights Reserved, file = Core.java
  * 
  * This source is subject to Code Comb. 
  * Permission is hereby granted, free of charge, to any person obtaining a 
@@ -127,17 +126,6 @@ abstract public class Database {
 		mCore.load(listener, requestType, reference);
 	}
 
-	/**
-	 * returns the achieved value by performing a request for the given listener
-	 * 
-	 * @param listener
-	 *            the listener who asked for the request to be performed
-	 * @return the achieved value
-	 */
-	public static Object getRequestValue(final ApplicationListener listener, final RequestType requestType) {
-		return mCore.getRequestValue(listener, requestType);
-	}
-
 	/* ------------------------------------- public methods ------------------------------------- */
 
 	protected <T> void _store(final RequestType requestType, final T content) {
@@ -195,11 +183,24 @@ abstract public class Database {
 	/**
 	 * can be called from {@link Database} and {@link Networker} to send messages to the main-thread
 	 * 
-	 * @param message
-	 *            the message which will be handled
+	 * @param requestType
+	 *            the requestType of the operation performed
 	 */
-	protected void sendMessage(final Message message) {
-		mCore.sendMessage(message);
+	protected void sendMessage(final RequestType requestType) {
+		mCore.sendMessage(requestType);
+	}
+
+	/**
+	 * can be called from {@link Database} and {@link Networker} to send messages to the main-thread
+	 * 
+	 * @param requestType
+	 *            the requestType of the operation performed
+	 * @param requestValue
+	 *            the value obtained by performing the requested operation
+	 */
+	protected void sendMessage(final RequestType requestType, final Object requestValue) {
+		storeRequestValue(requestType, requestValue);
+		mCore.sendMessage(requestType);
 	}
 
 	/**

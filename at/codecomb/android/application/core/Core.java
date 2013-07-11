@@ -9,6 +9,7 @@ import java.util.TreeMap;
 
 import android.annotation.SuppressLint;
 import android.app.Application;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import at.codecomb.android.application.listener.ApplicationListener;
@@ -47,12 +48,12 @@ import at.codecomb.android.application.listener.ApplicationListener;
  */
 @SuppressLint("HandlerLeak")
 abstract public class Core extends Application {
-	public static final String REQUEST_TYPE = "REQUEST_TYPE";
+	private static final String REQUEST_TYPE = "REQUEST_TYPE";
 
 	private Database mDatabase;
 	private Networker mNetworker;
 
-	private ListenerQueue mListenerQueue;
+	private static ListenerQueue mListenerQueue;
 
 	private TreeMap<RequestType, ApplicationListener> mListener;
 	private static Handler mHandler;
@@ -86,6 +87,21 @@ abstract public class Core extends Application {
 
 	/* ------------------------------------- public methods ------------------------------------- */
 
+	/**
+	 * returns the achieved value by performing a request for the given listener
+	 * 
+	 * @param listener
+	 *            the listener who asked for the request to be performed
+	 * @return the achieved value
+	 */
+	public static Object getRequestValue(final ApplicationListener listener, final RequestType requestType) {
+		ListenerValue<?> returnValue = mListenerQueue.get(listener, requestType);
+		if (returnValue != null) {
+			return returnValue.getRequestValue();
+		}
+		return null;
+	}
+	
 	/**
 	 * stores an object in the local database provided by the class extending {@link Database}
 	 * 
@@ -148,7 +164,12 @@ abstract public class Core extends Application {
 	 * @param message
 	 *            the message which will be handled
 	 */
-	public void sendMessage(final Message message) {
+	public void sendMessage(final RequestType requestType) {
+		Message message = Message.obtain();
+		Bundle bundle = new Bundle();
+		bundle.putSerializable(Core.REQUEST_TYPE, requestType);
+		message.setData(bundle);
+		
 		mHandler.sendMessage(message);
 	}
 
@@ -160,21 +181,6 @@ abstract public class Core extends Application {
 	 */
 	public <T> void storeRequestValue(final RequestType requestType, final T requestValue) {
 		mListenerQueue.add(getListenerReference(requestType), new ListenerValue<T>(requestType, requestValue));
-	}
-
-	/**
-	 * returns the achieved value by performing a request for the given listener
-	 * 
-	 * @param listener
-	 *            the listener who asked for the request to be performed
-	 * @return the achieved value
-	 */
-	public Object getRequestValue(final ApplicationListener listener, final RequestType requestType) {
-		ListenerValue<?> returnValue = mListenerQueue.get(listener, requestType);
-		if (returnValue != null) {
-			return returnValue.getRequestValue();
-		}
-		return null;
 	}
 
 	/* ------------------------------------- Baseconstruct ------------------------------------- */
